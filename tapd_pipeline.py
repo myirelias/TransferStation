@@ -1,9 +1,3 @@
-# !/usr/bin/env python
-# coding=utf-8
-
-import os
-# from hdfs3 import HDFileSystem
-
 
 class TapdPipe(object):
 

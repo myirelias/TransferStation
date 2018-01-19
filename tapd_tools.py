@@ -1,8 +1,3 @@
-# !/usr/bin/env python
-# coding=utf8
-
-import datetime
-
 
 class TapdTools(object):
 
