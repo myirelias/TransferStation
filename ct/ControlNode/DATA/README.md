@@ -1,3 +1,0 @@
-for tansfer
-dasdaddad
-ddd
