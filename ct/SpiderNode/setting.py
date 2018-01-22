@@ -11,3 +11,28 @@ HEADERS = {
     'Cache-Control': 'max-age=0',
     'Proxy-Switch-Ip': 'yes'
 }
+
+XPATHLIST = [
+    {
+        "title": ".//*[@class='cnt_bd']/h1/text()",
+        "info": "string( .//*/span[@class='info'])",
+        "content": ".//*[@class='cnt_bd']/p/text()"
+    },
+    {
+        "title": ".//*[@class='cnt_nav']/h3/text()",
+        "info": ".//*[text()='来源：']/parent::p/descendant::text()",
+        "content": ".//*[text()='视频简介：']/parent::p/descendant::text()"
+
+    },
+    {
+        "title": ".//*[@class='bd']/h1/text()",
+        "info": ".//*[@class='date_left_yswp']/text()",
+        "content": ".//*[@id='page_body']//*[@class='bd']/p/descendant::text()"
+    },
+    {
+        "title": ".//*[@class='main']/h1/text()",
+        "info": ".//*[@class='main']/h4/text()",
+        "content": ".//*[@id='page_body']//*[@class='main']/p/text()"
+    }
+
+]

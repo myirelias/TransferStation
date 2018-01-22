@@ -29,17 +29,18 @@ class Schedule(object):
             try:
                 if not self.url_q.empty():
                     url = self.url_q.get(True)
-                    print('获取到任务%s,剩余任务数量' % (url,))
+                    print('获取到任务 %s' % url)
                     realurl = self._schedule_re(url)
                     if realurl:
                         content = self.crawl.crawl_get_content(url, pagecode='UTF-8', proxies=self._schedule_proxies(),
                                                                headers=setting.HEADERS)
-                        xpath_info = {
-                            "title": ".//*[@class='cnt_bd']/h1/text()",
-                            "info": "string( .//*/span[@class='info'])",
-                            "content": ".//*[@class='cnt_bd']/p/text()"
-                        }
-                        res = self.xpather.xpath_content_data(content=content, xpather=xpath_info)
+                        for eachxpath in setting.XPATHLIST:
+                            res = self.xpather.xpath_content_data(content=content, xpather=eachxpath)
+                            if res.get('title', '') == '':
+                                continue
+                            else:
+                                break
+                        res['url'] = url
                         resdict = {'url': url, 'content': res}
                     else:
                         content = self.crawl.crawl_get_content(url, pagecode='UTF-8', proxies=self._schedule_proxies(),
@@ -50,7 +51,7 @@ class Schedule(object):
                             self.result_q.put(each)
                     else:
                         self.result_q.put(resdict)
-                    time.sleep(0.1)
+                    time.sleep(2)
             except Exception as e:
                 print('[error] %s ' % e)
                 continue
