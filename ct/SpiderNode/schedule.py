@@ -90,18 +90,7 @@ class Schedule(object):
         使用代理ip
         :return: 代理ip
         """
-        proxy_host = "proxy.abuyun.com"
-        proxy_port = "9010"
-        proxy_user = "HY3JE71Z6CDS782P"
-        proxy_pass = "CE68530DAD880F3B"
-        proxy_meta = "http://%(user)s:%(pass)s@%(host)s:%(port)s" % {"host": proxy_host,
-                                                                     "port": proxy_port,
-                                                                     "user": proxy_user,
-                                                                     "pass": proxy_pass}
-        proxies = {"http": proxy_meta,
-                   "https": proxy_meta}
-
-        return proxies
+        pass
 
 
 if __name__ == '__main__':
