@@ -31,7 +31,7 @@ class Engine(object):
         BaseManager.register('get_url_q', callable=_get_url)
         BaseManager.register('get_result_q', callable=_get_result)
         # 创建一个manager实例，绑定ip/port以及密匙
-        manager = BaseManager(address=('127.0.0.1', 8898), authkey='ajiao'.encode('UTF-8'))
+        manager = BaseManager(address=('192.168.2.75', 8898), authkey='ajiao'.encode('UTF-8'))
 
         return manager
 
