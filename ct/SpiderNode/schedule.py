@@ -17,7 +17,7 @@ class Schedule(object):
         # 注册网络队列
         BaseManager.register('get_url_q')
         BaseManager.register('get_result_q')
-        manager = BaseManager(address=('127.0.0.1', 8898), authkey='ajiao'.encode('UTF-8'))
+        manager = BaseManager(address=('192.168.2.75', 8898), authkey='ajiao'.encode('UTF-8'))
         manager.connect()
         self.url_q = manager.get_url_q()
         self.result_q = manager.get_result_q()
