@@ -21,6 +21,7 @@ class Engine(object):
             self.old_news = set(self._engine_load_cpickle())
         except:
             self.old_news = set([])
+        self.count = 0
 
     def _engine_allnews(self):
         """
@@ -63,7 +64,7 @@ class Engine(object):
         md5_url = self._engine_get_md5(url)
 
         if md5_url not in self.old_news:
-            print('[%s]新增新闻 %s' % (title, datetime.datetime.now().strptime('%Y-%m-%d %H:%M:%S')))
+            print('[%s]新增新闻 %s' % (datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'), title))
             content_news = self.crawl.crawl_get_content(url, proxies=self._engine_use_proxy(),
                                                         headers=setting.HEADERS)
             for eachxpather in setting.XPATHER_NEWS_INFO:
@@ -76,6 +77,7 @@ class Engine(object):
             news_info['out_title'] = title
             if news_info.get('title'):
                 self.pipe.pipe_save_db(news_info, dbname='db_xinhua_news', colname='col_rs_yq_ll')
+                self.count += 1
             self.old_news.add(md5_url)
             time.sleep(0.5)
         else:
@@ -135,6 +137,7 @@ class Engine(object):
             for eachnews in news_list:
                 self._engine_update_news(eachnews)
             self._engine_cpickle_data(self.old_news)
+            print('[%s]新增新闻数量 %s' % (datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'), self.count))
         except Exception as e:
             print(e)
 

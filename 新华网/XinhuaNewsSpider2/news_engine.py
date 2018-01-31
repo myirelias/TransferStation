@@ -89,10 +89,9 @@ class Engine(object):
         if not isinstance(news_dict, dict):
             return
 
-        url = news_dict.get('link')
         title = news_dict.get('title')
 
-        print('[%s]新增新闻 %s' % (title, datetime.datetime.now().strptime('%Y-%m-%d %H:%M:%S')))
+        print('[%s]新增新闻 %s' % (datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'), title))
         content_news = self.crawl.crawl_get_content(url, proxies=self._engine_use_proxy(),
                                                     headers=setting.HEADERS)
         for eachxpather in setting.XPATHER_NEWS_INFO:
@@ -172,7 +171,7 @@ class Engine(object):
     def excute(self):
         try:
             newslist = self._engine_allnews()
-            print('新增新闻数量 %s' % len(newslist))
+            print('[%s]新增新闻数量 %s' % (datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'), len(newslist)))
             for eachnews in newslist:
                 self._engine_update_news(eachnews)
             # print('目前最大时间 %s' % self.maxtime)
