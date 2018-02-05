@@ -81,7 +81,10 @@ class Engine(object):
                     time.sleep(60)
                     retry -= 1
                 time.sleep(0.5)
-            self.maxtime[position] = max(current_max_time)
+            try:
+                self.maxtime[position] = max(current_max_time)
+            except:
+                pass
 
         return allnews_list
 
