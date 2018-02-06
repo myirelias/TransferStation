@@ -1,6 +1,0 @@
-# ignore
-DATA
-__pycache__
-__init__.py
-.DS_Store
-tool.py
