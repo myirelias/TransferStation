@@ -49,11 +49,13 @@ class Engine(object):
                     url_detail = url_start + each_url[2:]
                     self.urls.append(url_detail)
 
-
+                # 是否继续抓取的标识
+                # next_flag = self.spider.spider_content_data(content=content_page, xpather=setting.XPATHER_NEXT)
 
                 # # 以下为测试专用，请删除
                 # if count_page > 2:
                 #     break
+
                 if not res_urls:
                     break
                 if self.old_news and count_page >= 10:
@@ -105,7 +107,7 @@ class Engine(object):
                 if res_detail.get('title'):
                     break
             res_detail['url'] = url_news
-            self.pipe.pipe_save_db(res_detail, 'db_tourism', 'db_news')
+            self.pipe.pipe_save_db(res_detail, 'db_tourism', 'col_news')
             time.sleep(2)
 
     def _engine_new_news(self):

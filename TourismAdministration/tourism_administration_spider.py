@@ -31,13 +31,19 @@ class Spider(object):
         if isinstance(kwargs['xpather'], dict):  # 解析规则以dict的格式传过来的，这种规则默认解析结果为一条数据
             response = {}
             for eachkey in xpather:
-                res = selector.xpath(xpather[eachkey])
+                try:
+                    res = selector.xpath(xpather[eachkey])
+                except:
+                    response[eachkey] = ''
+                    continue
+
                 if eachkey == 'img':
                     response[eachkey] = \
                         ','.join(res).replace('\n', '').replace('\r', '').replace('\t', '').replace(' ', '')
                 else:
                     response[eachkey] = ''.join(res).replace('\n', '').replace('\r', '').\
                         replace('\t', '').replace(' ', '').replace('当前位置：', '').replace('\xa0', '')
+
         elif isinstance(kwargs['xpather'], str):  # 解析规则为str
             response = selector.xpath(kwargs['xpather'])
         else:
