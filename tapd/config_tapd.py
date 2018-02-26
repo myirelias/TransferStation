@@ -1,5 +1,5 @@
 # 入口地址
-URL = 'https://www.tapd.cn/20175631/prong/stories/stories_list'
+URL = 'https://www.tapd.cn/company/participant_projects'
 
 # 请求参数
 PARAMS = {'conf_id': '1120175631001000270',
@@ -14,23 +14,10 @@ HEADERS = {'Host': 'www.tapd.cn',
            'Accept-Encoding': 'gzip, deflate, br',
            'Referer': 'https://www.tapd.cn/20175631/prong/stories/stories_list',
            'Connection': 'keep-alive',
-           'Upgrade-Insecure-Requests': '1'}
+           'Upgrade-Insecure-Requests': '1',
+          'Cookie': 'pgv_pvi=281752576; locale=zh_cn; new_worktable=todo%7C20175631%7Ctodo_all%7Cnormal_list; left_tree_status=1; 2003421881_left_tree_status=open; CAKEPHP=7d3303346f46e39b28686f3a7ce0490a8520acc23305a36065d30da46ad9df44; pgv_si=s3241845760; t_u=efddc1b7d5e578b45180957d09c8ce449103120cd31d3e4720806c5f8047b879bd838778eef9b3b915a0292779d38c6a8b419f0a38926bcb8f57eef70da40f2f7e60783763008737%7C1; t_cloud_login=xieyj%40daqsoft.com.cn'}
 
-COOKIES = {'cookie': 'worktable_index_order1000000000000000082sort=%7B%22wangjiawei_70_'
-                     '20175631%22%3A%22created%7EDESC%7E20171009%22%7D;'
-                     ' worktable_index_order1000000000000000081sort=%7B%2'
-                     '2wangjiawei_59_20175631%22%3A%22created%7EDESC%7E20171009%22%7D;'
-                     ' selected_workspace_tab70=20175631;'
-                     ' worktable_last_visit=story;'
-                     ' selected_workspace_tab59=20175631;'
-                     ' selected_workspace_tabexpiration_date=20175631; pgv_pvi=5316867072;'
-                     ' 2001883701_left_tree_status=open;'
-                     ' CAKEPHP=7f5b4be15e8c219072655c971e640c45b5436fb988e7c8124f139fa2d4f4f34a;'
-                     ' locale=zh_cn;'
-                     ' t_cloud_login=18200120030;'
-                     ' t_u=b88645efac96c12e0d0816b7a4f7e2f09103120cd31d3e47a1a6d2a8c030'
-                     '4534f8bb37de1996e86e27a9b60d3ba8473f725d42c45208ac592452f7283b7aa5c178754f04fe8ae321%7C1;'
-                     ' new_worktable=todo%7C%7C67%7Cexpiration_date'}
+COOKIES = {'Cookie': 'pgv_pvi=281752576; locale=zh_cn; new_worktable=todo%7C20175631%7Ctodo_all%7Cnormal_list; left_tree_status=1; 2003421881_left_tree_status=open; CAKEPHP=7d3303346f46e39b28686f3a7ce0490a8520acc23305a36065d30da46ad9df44; pgv_si=s3241845760; t_u=efddc1b7d5e578b45180957d09c8ce449103120cd31d3e4720806c5f8047b879bd838778eef9b3b915a0292779d38c6a8b419f0a38926bcb8f57eef70da40f2f7e60783763008737%7C1; t_cloud_login=xieyj%40daqsoft.com.cn'}
 
 # 所有任务链接文件地址
 FN_ALL_TASK_LINK = 'all_task_link.txt'
