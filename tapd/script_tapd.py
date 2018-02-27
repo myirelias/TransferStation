@@ -28,7 +28,7 @@ class TapdEngine(object):
     逻辑处理类，包含所有对其他类的调用以及逻辑处理
     function excute: 启动方法，负责对各个方法进行启动，对数据结果进行推送
     function all_task_link: 获取所有需要抓取的任务，新增遍历项目目录逻辑，所有任务链接输出到all_task_link.txt文本
-    function
+    function each_task_info: 获取每个任务的所有评论内容，将当日发布的内容进行提取
     """
 
     def __init__(self):
@@ -42,16 +42,27 @@ class TapdEngine(object):
         self.setting = tapdsetting.reload_setting()
 
     def excute(self):
+        """
+        启动方法
+        每日抓取完成后推送到HDFS上
+        :return:
+        """
         self.all_task_link()
         self.each_task_info()
-        # if int(datetime.datetime.today().strftime('%H%M')) >= 2300 \
-        #         or int(datetime.datetime.today().strftime('%H%M')) <= 800:
-        #     self.pipe.load_in_hdfs(self.setting.FN_ALL_TASK_INFO)
-        # else:
-        #     self.pipe.load_in_hdfs(self.filename)
+        if int(datetime.datetime.today().strftime('%H%M')) >= 2300 \
+                or int(datetime.datetime.today().strftime('%H%M')) <= 800:
+            self.pipe.load_in_hdfs(self.setting.FN_ALL_TASK_INFO)
+        else:
+            self.pipe.load_in_hdfs(self.filename)
 
     # 获取所有任务的link
     def all_task_link(self):
+        """
+        获取所有任务的链接
+        1.1版本新增多项目目录遍历，不再只有单一的'实验室事项'目录
+        抓取每个项目目录中的全部任务，目的是避免漏抓以前发布的项目的迭代更新内容
+        所有获取到的任务链接输出到DATA/all_task_link.txt中
+        """
         xpater_project = ".//*[@class='project-list']/li/a/@href"
         content_project = self.crawl.crawl_get_contnet(self.setting.URL, headers=self.setting.HEADERS)
         res_project = self.spider.spider_content_data(content_project, xpater_project)
@@ -66,6 +77,14 @@ class TapdEngine(object):
 
     # 获取所有任务的详细内容
     def each_task_info(self):
+        """
+        对TAPD所有的任务进行抓取
+        从DATA/all_task_link.txt中加载所有任务链接
+        每个任务获取其所有评论内容并提取当日的数据
+        对当日数据进行格式化处理并输出到DATA/tapd_task_xxxx-xx-xx.txt中
+        当日数据追加到历史数据中DATA/task_cmt2.txt
+        :return:
+        """
         alltasklink = self.pipe.read_alltask_url(self.setting.FN_ALL_TASK_LINK)
         savedata = []
         for eachlink in alltasklink:
@@ -84,16 +103,20 @@ class TapdEngine(object):
                     dealer = eachdealercontent[0]
                     dealer_name = self.tools.name_change(dealer)
                     # 遍历所有任务，但只存储今天的task反馈,后期可根据字典里面解析字段扩展需要的字段
-                    if dealdate == '2018-02-26':  # 临时修改处self.today
+                    if dealdate == self.today:
+                        # 历史数据存储的内容
                         createdatalist = [dealdate, taskdict['tasktype'], dealer_name, taskdict['title'],
                                           taskdict['state'], eachdealercontent[2],
                                           ''.join(eachdealercontent[3:]).strip()]
-
+                        # 当日数据存储的内容
                         createdatadict1 = [taskdict['title'],
                                            taskdict['state'], eachdealercontent[2],
                                            ''.join(eachdealercontent[3:]).strip()]
+                        # 当日数据格式化
                         saveinfo = '\t'.join(createdatadict1)
+                        # 历史数据格式化
                         savehis = '\u0001'.join(createdatalist)
+                        # 当日数据格式化
                         createdatadict = {
                             'dealdate': dealdate,
                             'tasktype': taskdict['tasktype'],
@@ -102,6 +125,7 @@ class TapdEngine(object):
                         }
                         savehistory.append(savehis)
                         savedata.append(createdatadict)
+                # 23点以后的抓取内容只存入到历史数据中
                 if int(datetime.datetime.today().strftime('%H%M')) >= 2300 or int(
                         datetime.datetime.today().strftime('%H%M')) <= 800:
                     self.pipe.save_list_txt(savehistory, self.setting.FN_ALL_TASK_INFO, savetype='a')
@@ -113,15 +137,19 @@ class TapdEngine(object):
                 self.pipe.save_list_txt(error_info, filename_error, savetype='a')
                 time.sleep(10)
                 continue
+        # 当日数据抓取后经过格式化处理直接写入到当天的文本中
         if len(savedata) != 0 and int(datetime.datetime.today().strftime('%H%M')) <= 2200:
-            print('\n=================================')
-            print(savedata)
-            print('=================================\n')
             self.tools.tool_data_format(savedata, self.filename)
             # self.pipe.save_list_txt(savedata, self.filename, savetype='a')
 
 
 class TapdCrawl(object):
+    """
+    功能类，主要提供页面content的抓取
+    function tapdlist: 请求TAPD项目页面content
+    function get_eachtask_info: 请求每个任务的content
+    function crawl_get_content: 请求指定url的页面content
+    """
     def __init__(self):
         self.session = requests.Session()
         newconfig = TapdSetting()
@@ -168,8 +196,8 @@ class TapdCrawl(object):
 
     # get请求页面content
     def crawl_get_contnet(self, url, **kw):
-        retry = 5
-        response = 'no_data'
+        retry = 5  # 重试次数
+        response = 'no_data'  # 响应内容
         while retry:
             retry -= 1
             try:
@@ -187,6 +215,13 @@ class TapdCrawl(object):
 
 
 class TapdSpider(object):
+    """
+    功能类，负责对页面content进行解析
+    function _spider_data: 根据提供的页面content和xpath解析规则解析其中的数据并返回
+    function _spider_string: 主要是针对页面的多次解析，负责对提供的xpath解析的element对象类型进行二次解析
+    function cleandata_more: 主要通过提供dict类型的xpath规则对页面进行解析
+    function spider_content_data: 根据提供的页面content和xpath解析规则解析其中的数据并返回，增加了xpath类可扩展功能
+    """
     def __init__(self):
         pass
 
@@ -264,28 +299,51 @@ class TapdSpider(object):
 
 
 class TapdPipe(object):
+    """
+    功能类，主要负责数据的输出/输入操作
+    function _checkdir: 创建DATA文件夹
+    function _save_txt: 存储数据到指定txt文本中
+    function _read_txt: 读取指定txt文本中的数据
+    function load_in_hdfs: 推送数据到hdfss
+    function pipe_save_txt: 新增的存储数据到txt文本
+    """
     def __init__(self):
         self._checkdir()
 
     @staticmethod
     def _checkdir():
+        """
+        创建data文件夹
+        :return:
+        """
         if not os.path.exists('DATA'):
             os.makedirs('DATA')
 
     @staticmethod
     def _save_txt(content, filename, savetype):
+        """
+        存储数据到指定txt文本中
+        :param content: 存储内容
+        :param filename: 文件名
+        :param savetype: 存储方式
+        :return:
+        """
         if isinstance(content, list):
             with open(os.path.join(os.path.abspath('DATA'), filename), savetype, encoding='utf8') as f:
                 for each in content:
                     f.write(each + '\n')
         else:
             with open(os.path.join(os.path.abspath('DATA'), filename), savetype, encoding='utf8') as f:
-                for each in content:
-                    f.write(each + '\n')  # 为了记录错误日志才添加的else,因为错误信息是str不是list
+                f.write(content + '\n')  # 为了记录错误日志才添加的else,因为错误信息是str不是list
 
     # 读取txt文件
     @staticmethod
     def _read_txt(filename):
+        """
+        读取指定txt中的数据内容
+        :param filename: 文件名称
+        :return: 文件中的内容
+        """
         return (each for each in open(os.path.join(os.path.abspath('DATA'), filename), 'r', encoding='utf8'))
 
     # 存list到txt
@@ -297,6 +355,11 @@ class TapdPipe(object):
 
     # 集群操作
     def load_in_hdfs(self, filename):
+        """
+        集群操作
+        :param filename: 需要推送的文件
+        :return:
+        """
         hdfs = HDFileSystem(host='192.168.100.178', port=8020)
         try:
             file_path = os.path.join(os.path.abspath('DATA'), filename)
@@ -313,11 +376,17 @@ class TapdPipe(object):
                     f.write(each + '\n')
         else:
             with open(os.path.join(os.path.abspath('DATA'), filename), savetype, encoding='utf8') as f:
-                for each in content:
-                    f.write(each + '\n')  # 为了记录错误日志才添加的else,因为错误信息是str不是list
+                    f.write(content + '\n')  # 为了记录错误日志才添加的else,因为错误信息是str不是list
 
 
 class TapdTools(object):
+    """
+    功能类，主要是一些小工具
+    function get_today: 获取当天日期
+    function makefile: 创建当日的文件名称
+    function name_change: 将拼音名称转换为中文名称
+    function tool_data_format: 对数据进行格式化处理
+    """
     def __init__(self):
         config = TapdSetting()
         self.setting = config.reload_setting()
@@ -366,9 +435,11 @@ class TapdTools(object):
         today = datetime.datetime.now().strftime('%Y-%m-%d') + ':\n'
         self.pipe.pipe_save_txt(today, filename, savetype='a')
         all_name = set([])
+        # 获取当前data中所有人员名称
         for each in data:
             all_name.add(each.get('dealer_name'))
 
+        # 把所有任务按照每个人为单位分组
         for one in all_name:
             save_data = ''
             onelist = []
@@ -377,10 +448,12 @@ class TapdTools(object):
                     onelist.append(each)
 
             typename = set([])
+            # 获取每个人所有任务
             for eveyone in onelist:
                 tasktype = eveyone.get('tasktype')
                 typename.add(tasktype)
             save_data += one.strip() + ':' + '\n'
+            # 将每个人的数据按照任务分组
             for eachtype in typename:
                 typelist = []
                 for eveyone in onelist:
@@ -411,17 +484,15 @@ class TapdSetting(object):
 
 
 if __name__ == '__main__':
-    # print('[%s]脚本启动' % datetime.datetime.now().strftime('%Y%m%d %H:%M:%S'))
-    # i = TapdEngine()
-    # starttime = time.time()
-    # i.excute()
-    # endtime = time.time()
-    # print('[%s]执行完毕' % datetime.datetime.now().strftime('%Y%m%d %H:%M:%S'))
-    # print('耗时 %.1f' % (endtime - starttime))
+    """
+    循环执行
+    每天18:00开始抓取，数据入当日任务txt文本中
+    每天23:00第二次抓取，数据入历史任务txt文本中
+    """
     while True:
         nowtime = datetime.datetime.today().strftime('%H%M')
-        if nowtime == '1015':
-            print('[%s]working...' % datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
+        if nowtime == '1800':
+            print('[%s]working...' % datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'))  # 部署时请注释该行
             i = TapdEngine()
             starttime = time.time()
             i.excute()
@@ -429,7 +500,7 @@ if __name__ == '__main__':
             endtime = time.time()
             time.sleep(280 * 60 - int(endtime - starttime))
         elif nowtime == '2300':
-            print('[%s]working...' % datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
+            print('[%s]working...' % datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'))  # 部署时请注释该行
             i = TapdEngine()
             starttime = time.time()
             i.excute()
