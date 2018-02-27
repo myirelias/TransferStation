@@ -16,6 +16,7 @@ from lxml import etree
 import os
 from imp import reload
 
+
 try:
     from hdfs3 import HDFileSystem
 except:
@@ -25,7 +26,9 @@ except:
 class TapdEngine(object):
     """
     逻辑处理类，包含所有对其他类的调用以及逻辑处理
-    excute 启动方法，负责对各个方法进行启动，对数据结果进行推送
+    function excute: 启动方法，负责对各个方法进行启动，对数据结果进行推送
+    function all_task_link: 获取所有需要抓取的任务，新增遍历项目目录逻辑，所有任务链接输出到all_task_link.txt文本
+    function
     """
 
     def __init__(self):
@@ -89,7 +92,7 @@ class TapdEngine(object):
                         createdatadict1 = [taskdict['title'],
                                            taskdict['state'], eachdealercontent[2],
                                            ''.join(eachdealercontent[3:]).strip()]
-                        saveinfo = '\u0001'.join(createdatadict1)
+                        saveinfo = '\t'.join(createdatadict1)
                         savehis = '\u0001'.join(createdatalist)
                         createdatadict = {
                             'dealdate': dealdate,
@@ -356,14 +359,18 @@ class TapdTools(object):
     def tool_data_format(self, data, filename):
         """
         对数据进行格式化，目前只接受由dict类型组成的list的数据
+        :param filename: 存储位置
         :param data: 一个或多个dict组成的list
         :return: 格式化后的数据
         """
+        today = datetime.datetime.now().strftime('%Y-%m-%d') + ':\n'
+        self.pipe.pipe_save_txt(today, filename, savetype='a')
         all_name = set([])
         for each in data:
             all_name.add(each.get('dealer_name'))
 
         for one in all_name:
+            save_data = ''
             onelist = []
             for each in data:
                 if each.get('dealer_name') == one:
@@ -373,17 +380,17 @@ class TapdTools(object):
             for eveyone in onelist:
                 tasktype = eveyone.get('tasktype')
                 typename.add(tasktype)
-
+            save_data += one.strip() + ':' + '\n'
             for eachtype in typename:
                 typelist = []
                 for eveyone in onelist:
                     if eveyone.get('tasktype') == eachtype:
                         typelist.append(eveyone.get('info'))
-                save_name = one.strip(), ':\n', eachtype.strip(), '\n'
-                self.pipe.pipe_save_txt(save_name, filename, savetype='a')
+                save_data += eachtype.strip() + '\n'
                 for each in typelist:
-                    save_info = '\t\t', each.strip(), '\n'
-                    self.pipe.pipe_save_txt(save_info, filename, savetype='a')
+                    save_data += '\t\t' + each.strip() + '\n'
+
+            self.pipe.pipe_save_txt(save_data, filename, savetype='a')
 
 
 class TapdSetting(object):
