@@ -64,10 +64,9 @@ class TapdEngine(object):
     # 获取所有任务的详细内容
     def each_task_info(self):
         alltasklink = self.pipe.read_alltask_url(self.setting.FN_ALL_TASK_LINK)
-
+        savedata = []
         for eachlink in alltasklink:
             try:
-                savedata = []
                 savehistory = []
                 content = self.crawl.get_eachtask_info(eachlink)  # 获取页面html
                 # 获取页面所有需要的信息，除评论栏，返回的是一个dict
@@ -82,7 +81,7 @@ class TapdEngine(object):
                     dealer = eachdealercontent[0]
                     dealer_name = self.tools.name_change(dealer)
                     # 遍历所有任务，但只存储今天的task反馈,后期可根据字典里面解析字段扩展需要的字段
-                    if dealdate == '2018-02-23':  # 临时修改处self.today
+                    if dealdate == '2018-02-26':  # 临时修改处self.today
                         createdatalist = [dealdate, taskdict['tasktype'], dealer_name, taskdict['title'],
                                           taskdict['state'], eachdealercontent[2],
                                           ''.join(eachdealercontent[3:]).strip()]
@@ -100,13 +99,10 @@ class TapdEngine(object):
                         }
                         savehistory.append(savehis)
                         savedata.append(createdatadict)
-                if len(savedata) != 0 and int(datetime.datetime.today().strftime('%H%M')) <= 2200:
-                    self.tools.tool_data_format(savedata, self.filename)
-                    # self.pipe.save_list_txt(savedata, self.filename, savetype='a')
-                elif int(datetime.datetime.today().strftime('%H%M')) >= 2300 or int(
+                if int(datetime.datetime.today().strftime('%H%M')) >= 2300 or int(
                         datetime.datetime.today().strftime('%H%M')) <= 800:
                     self.pipe.save_list_txt(savehistory, self.setting.FN_ALL_TASK_INFO, savetype='a')
-                time.sleep(1)
+                time.sleep(0.5)
             except Exception as e:
                 filename_error = 'error_log.txt'
                 error_info = '[%s]|[%s]  %s' % (datetime.datetime.now().strftime('%Y%m%d %H:%M:%S'),
@@ -114,6 +110,12 @@ class TapdEngine(object):
                 self.pipe.save_list_txt(error_info, filename_error, savetype='a')
                 time.sleep(10)
                 continue
+        if len(savedata) != 0 and int(datetime.datetime.today().strftime('%H%M')) <= 2200:
+            print('\n=================================')
+            print(savedata)
+            print('=================================\n')
+            self.tools.tool_data_format(savedata, self.filename)
+            # self.pipe.save_list_txt(savedata, self.filename, savetype='a')
 
 
 class TapdCrawl(object):
@@ -411,7 +413,7 @@ if __name__ == '__main__':
     # print('耗时 %.1f' % (endtime - starttime))
     while True:
         nowtime = datetime.datetime.today().strftime('%H%M')
-        if nowtime != '1820':
+        if nowtime == '1015':
             print('[%s]working...' % datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
             i = TapdEngine()
             starttime = time.time()
