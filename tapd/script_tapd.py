@@ -23,6 +23,11 @@ except:
 
 
 class TapdEngine(object):
+    """
+    逻辑处理类，包含所有对其他类的调用以及逻辑处理
+    excute 启动方法，负责对各个方法进行启动，对数据结果进行推送
+    """
+
     def __init__(self):
         self.crawl = TapdCrawl()
         self.spider = TapdSpider()
@@ -82,10 +87,10 @@ class TapdEngine(object):
                                           taskdict['state'], eachdealercontent[2],
                                           ''.join(eachdealercontent[3:]).strip()]
 
-                        createdatadict = [taskdict['title'],
-                                          taskdict['state'], eachdealercontent[2],
-                                          ''.join(eachdealercontent[3:]).strip()]
-                        saveinfo = '\u0001'.join(createdatadict)
+                        createdatadict1 = [taskdict['title'],
+                                           taskdict['state'], eachdealercontent[2],
+                                           ''.join(eachdealercontent[3:]).strip()]
+                        saveinfo = '\u0001'.join(createdatadict1)
                         savehis = '\u0001'.join(createdatalist)
                         createdatadict = {
                             'dealdate': dealdate,
@@ -373,7 +378,7 @@ class TapdTools(object):
                     if eveyone.get('tasktype') == eachtype:
                         typelist.append(eveyone.get('info'))
                 save_name = one.strip(), ':\n', eachtype.strip(), '\n'
-                self.pipe.pipe_save_txt(save_name, filename,savetype='a')
+                self.pipe.pipe_save_txt(save_name, filename, savetype='a')
                 for each in typelist:
                     save_info = '\t\t', each.strip(), '\n'
                     self.pipe.pipe_save_txt(save_info, filename, savetype='a')

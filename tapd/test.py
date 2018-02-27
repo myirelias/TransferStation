@@ -31,5 +31,6 @@ def tool_data_format(self, data):
             for each in typelist:
                 save_info = '\t\t', each.strip(), '\n'
 
+
 if __name__ == '__main__':
     tool_data_format()
