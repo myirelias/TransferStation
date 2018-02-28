@@ -492,7 +492,7 @@ if __name__ == '__main__':
     while True:
         nowtime = datetime.datetime.today().strftime('%H%M')
         if nowtime == '1800':
-            print('[%s]working...' % datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'))  # 部署时请注释该行
+            # print('[%s]working...' % datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'))  # 部署时请注释该行
             i = TapdEngine()
             starttime = time.time()
             i.excute()
@@ -500,7 +500,7 @@ if __name__ == '__main__':
             endtime = time.time()
             time.sleep(280 * 60 - int(endtime - starttime))
         elif nowtime == '2300':
-            print('[%s]working...' % datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'))  # 部署时请注释该行
+            # print('[%s]working...' % datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'))  # 部署时请注释该行
             i = TapdEngine()
             starttime = time.time()
             i.excute()

@@ -189,7 +189,7 @@
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
-      <option name="time" value="22" />
+      <option name="time" value="23" />
     </breakpoint-manager>
     <watches-manager />
   </component>
@@ -242,11 +242,10 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/script_tapd.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-3186">
-          <caret line="5" column="25" lean-forward="true" selection-start-line="5" selection-start-column="25" selection-end-line="5" selection-end-column="25" />
+        <state relative-caret-position="8589">
+          <caret line="503" column="28" lean-forward="true" selection-start-line="503" selection-start-column="28" selection-end-line="503" selection-end-column="28" />
           <folding>
             <element signature="e#233#244#0" expanded="true" />
-            <element signature="e#1019#1427#0" expanded="false" />
             <element signature="e#6397#6939#0" expanded="false" />
             <element signature="e#7027#7502#0" expanded="false" />
             <element signature="e#7577#8178#0" expanded="false" />
