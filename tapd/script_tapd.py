@@ -1,13 +1,19 @@
 # !/usr/bin/env python
 # coding=utf8
-# version=1.1
+# version=1.2
 """
+v 1.1
 新增方法
     1. crawl_get_content:获取页面content
     2. spider_content_data:解析页面数据
     3. tool_data_format:将每天数据格式化输出
 新增逻辑 抓取目录列表，以目录列表为单位抓取每个目录列表下面所有任务，并添加目录列表标签
 修改config.ini： URL
+
+v 1.2
+调整抓取策略：
+    1.新增每日22：00再次抓取当日任务，并进行格式化输出，推送至hdfs
+    2.新增当日任务txt文本校验，若当日任务txt文本已存在，则删除该文件，以便第二次抓取
 """
 import time
 import datetime
@@ -15,7 +21,6 @@ import requests
 from lxml import etree
 import os
 from imp import reload
-
 
 try:
     from hdfs3 import HDFileSystem
@@ -47,6 +52,8 @@ class TapdEngine(object):
         每日抓取完成后推送到HDFS上
         :return:
         """
+        if 2200 <= int(datetime.datetime.today().strftime('%H%M')) < 2300:
+            self.tools.tool_check_file(self.filename)
         self.all_task_link()
         self.each_task_info()
         if int(datetime.datetime.today().strftime('%H%M')) >= 2300 \
@@ -138,7 +145,7 @@ class TapdEngine(object):
                 time.sleep(10)
                 continue
         # 当日数据抓取后经过格式化处理直接写入到当天的文本中
-        if len(savedata) != 0 and int(datetime.datetime.today().strftime('%H%M')) <= 2200:
+        if len(savedata) != 0 and int(datetime.datetime.today().strftime('%H%M')) < 2300:
             self.tools.tool_data_format(savedata, self.filename)
             # self.pipe.save_list_txt(savedata, self.filename, savetype='a')
 
@@ -150,6 +157,7 @@ class TapdCrawl(object):
     function get_eachtask_info: 请求每个任务的content
     function crawl_get_content: 请求指定url的页面content
     """
+
     def __init__(self):
         self.session = requests.Session()
         newconfig = TapdSetting()
@@ -222,6 +230,7 @@ class TapdSpider(object):
     function cleandata_more: 主要通过提供dict类型的xpath规则对页面进行解析
     function spider_content_data: 根据提供的页面content和xpath解析规则解析其中的数据并返回，增加了xpath类可扩展功能
     """
+
     def __init__(self):
         pass
 
@@ -307,6 +316,7 @@ class TapdPipe(object):
     function load_in_hdfs: 推送数据到hdfss
     function pipe_save_txt: 新增的存储数据到txt文本
     """
+
     def __init__(self):
         self._checkdir()
 
@@ -376,7 +386,7 @@ class TapdPipe(object):
                     f.write(each + '\n')
         else:
             with open(os.path.join(os.path.abspath('DATA'), filename), savetype, encoding='utf8') as f:
-                    f.write(content + '\n')  # 为了记录错误日志才添加的else,因为错误信息是str不是list
+                f.write(content + '\n')  # 为了记录错误日志才添加的else,因为错误信息是str不是list
 
 
 class TapdTools(object):
@@ -387,6 +397,7 @@ class TapdTools(object):
     function name_change: 将拼音名称转换为中文名称
     function tool_data_format: 对数据进行格式化处理
     """
+
     def __init__(self):
         config = TapdSetting()
         self.setting = config.reload_setting()
@@ -424,7 +435,6 @@ class TapdTools(object):
         return changename
 
     # 数据格式化
-
     def tool_data_format(self, data, filename):
         """
         对数据进行格式化，目前只接受由dict类型组成的list的数据
@@ -465,6 +475,19 @@ class TapdTools(object):
 
             self.pipe.pipe_save_txt(save_data, filename, savetype='a')
 
+    # 文件校验
+    @staticmethod
+    def tool_check_file(filename):
+        """
+        当日任务文本校验，如果存在则删除当日任务文本，以便第二次抓取
+        :param filename:当日任务文件名称
+        :return:
+        """
+        today_task = os.path.join(os.path.abspath('DATA'), filename)
+        if not os.path.exists(today_task):
+            return
+        os.remove(today_task)
+
 
 class TapdSetting(object):
     def __init__(self):
@@ -487,18 +510,19 @@ if __name__ == '__main__':
     """
     循环执行
     每天18:00开始抓取，数据入当日任务txt文本中
-    每天23:00第二次抓取，数据入历史任务txt文本中
+    每天22:00第二次抓取，数据入当日任务txt文本中
+    每天23:00第三次抓取，数据入历史任务txt文本中
     """
     while True:
         nowtime = datetime.datetime.today().strftime('%H%M')
-        if nowtime == '1800':
+        if nowtime == '1800' or nowtime == '2200':
             # print('[%s]working...' % datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'))  # 部署时请注释该行
             i = TapdEngine()
             starttime = time.time()
             i.excute()
             del i
             endtime = time.time()
-            time.sleep(280 * 60 - int(endtime - starttime))
+            # time.sleep(60 * 60 - int(endtime - starttime))
         elif nowtime == '2300':
             # print('[%s]working...' % datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'))  # 部署时请注释该行
             i = TapdEngine()
