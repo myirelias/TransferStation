@@ -47,9 +47,6 @@ class SpiderSchedule(object):
             )
         print('spiderschedule init finsh')
 
-        def start_spider():
-            pass
-
     @staticmethod
     def _schedule_connect_rabbitmq(**kw):
         """

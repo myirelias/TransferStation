@@ -36,11 +36,11 @@ class ControlManager(object):
             credentials=admin
         ))
         # 创建消息通道
-        self.channel = connection.channel()
+        channel = connection.channel()
         # 声明消息队列
         for each in self.queue_name:
             qname = '%s_%s' % (setting.TASK_NAME, each)
-            self.channel.queue_declare(
+            channel.queue_declare(
                 queue=qname,
                 durable=True
             )
@@ -60,40 +60,6 @@ class ControlManager(object):
         # 创建消息通道
         channel = connection.channel()
         return channel
-    # 放在初始化中了
-    # def _manager_create_queue(self, **kw):
-    #     """
-    #     创建rabbitmq消息队列，队列命名通过配置文件中TASK_NAME来确定
-    #     参数设置：
-    #     user:用户名 psw:密码 host:主机ip port:端口号 vhost:虚拟主机
-    #     消息队列：
-    #     task_unstatic:任务队列，控制节点用于发布需要抓取的非静态(非新闻，如列表页面)任务
-    #     task_static:任务队列，控制节点用于发布需要抓取的静态(新闻内容页面)任务
-    #     result:结果队列，主要用于爬虫节点反馈爬取结果的队列
-    #     continue:新增队列，用于数据处理器获取其中反馈的新任务交给任务管理器
-    #     data:数据存储队列，用于数据处理器获取其中需要存储的数据进行储存
-    #     :param kw: 参数
-    #     :return:
-    #     """
-    #     # queue_name = ['task_unstatic', 'task_static', 'result', 'continue', 'data']
-    #     # # 创建登录验证信息
-    #     # admin = pika.PlainCredentials(kw.get('user', 'bana'), kw.get('psw', 'root'))
-    #     # # 创建rabbitmq链接
-    #     # connection = pika.BlockingConnection(pika.ConnectionParameters(
-    #     #     host=kw.get('host', '192.168.2.75'),
-    #     #     port=kw.get('port', 5672),
-    #     #     virtual_host=kw.get('vhost', '/'),
-    #     #     credentials=admin
-    #     # ))
-    #     # # 创建消息通道
-    #     # channel = connection.channel()
-    #
-    #     for each in self.queue_name:
-    #         qname = '%s_%s' % (setting.TASK_NAME, each)
-    #         channel.queue_declare(
-    #             queue=qname,
-    #             durable=True
-    #         )
 
     def manager_publish_task(self, start_url):
         """
