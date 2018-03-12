@@ -30,7 +30,7 @@ class ControlManager(object):
         admin = pika.PlainCredentials(kw.get('user', 'bana'), kw.get('psw', 'root'))
         # 创建rabbitmq链接
         connection = pika.BlockingConnection(pika.ConnectionParameters(
-            host=kw.get('host', '192.168.2.75'),
+            host=kw.get('host', setting.HOST),
             port=kw.get('port', 5672),
             virtual_host=kw.get('vhost', '/'),
             credentials=admin
@@ -52,7 +52,7 @@ class ControlManager(object):
         admin = pika.PlainCredentials(kw.get('user', 'bana'), kw.get('psw', 'root'))
         # 创建rabbitmq链接
         connection = pika.BlockingConnection(pika.ConnectionParameters(
-            host=kw.get('host', '192.168.2.75'),
+            host=kw.get('host', setting.HOST),
             port=kw.get('port', 5672),
             virtual_host=kw.get('vhost', '/'),
             credentials=admin
@@ -78,8 +78,9 @@ class ControlManager(object):
                 task_manager.task_save(task_manager.old_list, '../DATA/old_list.txt')
             # 每天零点检查抓取是否完成，如果完成则发布起始url循环抓取，并删除列表url以便循环抓取，此处跟据实际需求调整
             elif int(datetime.datetime.now().strftime('%H')) == 0:
-                self._manager_check_none()
-                task_manager.task_purge('../DATA/old_list.txt')
+                res = self._manager_check_none()
+                if res:
+                    task_manager.task_purge('../DATA/old_list.txt')
             while task_manager.task_has_new():  # 只要存在新增任务则会往对应队列里面推送
                 static_task, unstatic_task = task_manager.task_static_unstatic(setting.REGEX_URL)
                 self._manager_push_msg(static_task, qname=setting.TASK_NAME + '_task_static')
@@ -200,8 +201,9 @@ class ControlManager(object):
         have_task = self._manager_getone_msg(qname='%s_%s' % (setting.TASK_NAME, 'unstatic'))
         if not have_task:
             self._manager_push_msg(setting.START_URL, qname='%s_%s' % (setting.TASK_NAME, 'unstatic'))
+            return True
 
-
+        return False
 
 
 if __name__ == '__main__':

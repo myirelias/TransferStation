@@ -32,7 +32,7 @@ class SpiderSchedule(object):
         admin = pika.PlainCredentials(kw.get('user', 'bana'), kw.get('psw', 'root'))
         # 创建rabbitmq链接
         connection = pika.BlockingConnection(pika.ConnectionParameters(
-            host=kw.get('host', '192.168.2.75'),
+            host=kw.get('host', setting.HOST),
             port=kw.get('port', 5672),
             virtual_host=kw.get('vhost', '/'),
             credentials=admin
@@ -57,7 +57,7 @@ class SpiderSchedule(object):
         """
         admin = pika.PlainCredentials(kw.get('user', 'bana'), kw.get('psw', 'root'))
         connect = pika.BlockingConnection(pika.ConnectionParameters(
-            host=kw.get('host', '192.168.2.75'),
+            host=kw.get('host', setting.HOST),
             port=kw.get('port', 5672),
             virtual_host=kw.get('vhost', '/'),
             credentials=admin
@@ -193,7 +193,5 @@ if __name__ == '__main__':
     spider = SpiderSchedule()
     proc_static = Process(target=spider.schedule_static_spider)
     proc_unstatic = Process(target=spider.schedule_unstatic_spider)
-    # spider.schedule_static_spider()
-    # spider.schedule_unstatic_spider()
     proc_unstatic.start()
     proc_static.start()

@@ -6,6 +6,7 @@ try:
     from pymongo import MongoClient
 except:
     import pymongo
+import config as setting
 
 
 class ControlData(object):
@@ -14,7 +15,7 @@ class ControlData(object):
         self.files = os.path.join(os.path.abspath('DATA'), '%s')
         # self._data_makedir()
         # 此处mongodb是用的台式机ip 根据实际存储位置修改
-        self.client = MongoClient(host='192.168.2.75', port=27017)
+        self.client = MongoClient(host=setting.HOST, port=27017)
 
     @staticmethod
     def _data_makedir():  # 当前脚本所在位置若没有DATA文件夹则创建，脚本获取到的数据默认放在该文件夹里

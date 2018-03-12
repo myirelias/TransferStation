@@ -74,3 +74,6 @@ FN_OLD_URLS = 'fn_old_urls.txt'
 
 # 正则匹配规则,此处为静态页面url的正则表达式，匹配以下的规则的网址将抓取其中新闻内容
 REGEX_URL = r'/\d{4}-\d{2}/\d{2}/\w+_\d+.htm'
+
+# rabbitmq host
+HOST = '192.168.2.107'
