@@ -56,11 +56,11 @@ class TapdEngine(object):
             self.tools.tool_check_file(self.filename)
         self.all_task_link()
         self.each_task_info()
-        if int(datetime.datetime.today().strftime('%H%M')) >= 2300 \
-                or int(datetime.datetime.today().strftime('%H%M')) <= 800:
-            self.pipe.load_in_hdfs(self.setting.FN_ALL_TASK_INFO)
-        else:
-            self.pipe.load_in_hdfs(self.filename)
+        # if int(datetime.datetime.today().strftime('%H%M')) >= 2300 \
+        #         or int(datetime.datetime.today().strftime('%H%M')) <= 800:
+        #     self.pipe.load_in_hdfs(self.setting.FN_ALL_TASK_INFO)
+        # else:
+        #     self.pipe.load_in_hdfs(self.filename)
 
     # 获取所有任务的link
     def all_task_link(self):
