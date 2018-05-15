@@ -79,7 +79,7 @@ class Engine:
                         break
                     time.sleep(0.1)
             except:
-                break
+                continue
 
     def _engine_restaurant_info(self):
         """
