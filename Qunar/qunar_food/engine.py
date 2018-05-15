@@ -299,9 +299,9 @@ class Engine:
         :return: 代理ip
         """
         proxy_host = "proxy.abuyun.com"
-        proxy_port = "9010"
-        proxy_user = "HY3JE71Z6CDS782P"
-        proxy_pass = "CE68530DAD880F3B"
+        proxy_port = "****"
+        proxy_user = "****"
+        proxy_pass = "****"
         proxy_meta = "http://%(user)s:%(pass)s@%(host)s:%(port)s" % {"host": proxy_host,
                                                                      "port": proxy_port,
                                                                      "user": proxy_user,
