@@ -48,6 +48,6 @@ XPATH_TOURIST_DETAIL = {
 
 # file
 FILE_CITY_LIST = 'file_city_list.txt'  # 城市列表
-FILE_TOURIST_LIST = 'file_tourist_list.txt'  # 景区列表
-FILE_COMMENTS_INFO = 'file_comments_info.txt'  # 评论信息，包括最新评论时间，评论总数，景区id,景区name等
-FILE_COMMENTS_LIST = 'file_comments_list.txt'  # 所有评论内容
+FILE_TOURIST_INFO = 'file_tourist_info.txt'  # 景区列表
+FILE_COMMENTS_CHECK = 'file_comments_check.txt'  # 评论信息，包括最新评论时间，评论总数，景区id,景区name等
+FILE_COMMENTS_INFO = 'file_comments_info.txt'  # 所有评论内容
