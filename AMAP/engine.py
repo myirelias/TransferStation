@@ -30,7 +30,7 @@ class Engine:
             type_large = typeinfo[1]  # 类型大分类
             type_middle = typeinfo[2]  # 类型中分类
             type_small = typeinfo[3]  # 类型小分类
-            current_params['type'] = type_id
+            current_params['types'] = type_id
             save_filename = '{}_{}_{}_{}.txt'.format(type_id, type_large, type_middle, type_small)
             # 每个城市
             for each_city in citys:
