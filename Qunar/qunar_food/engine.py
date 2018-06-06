@@ -172,12 +172,6 @@ class Engine:
                         if not content_dict.get('data'):
                             break
                         content_comments = content_dict.get('data')
-                        # 第一遍抓取要确定评论页数
-                        if params['page'] == 1:
-                            page = self.analysis.analysis_by_xpath(content_comments,
-                                                                   xpahter=setting.XPATH_COMMENTS_PAGE)
-                            if page:
-                                max_page = int(''.join(page))
                         elements_com = self.analysis.analysis_by_xpath(content_comments,
                                                                        xpahter=setting.XPATH_COMMENTS_LI)
                         if not elements_com:
@@ -196,9 +190,12 @@ class Engine:
                                 content = self.analysis.analysis_by_xpath(each_element,
                                                                           xpahter=setting.XPATH_COMMENTS_CONTENT)
                             date = self.analysis.analysis_by_xpath(each_element, xpahter=setting.XPATH_COMMENTS_DATE)
-                            deal_content = ''.join(
-                                list(map(lambda x: x.replace('\n', '').replace('\r', '').replace('\t', '').
-                                         replace(' ', ''), content)))
+                            try:
+                                deal_content = ''.join(
+                                    list(map(lambda x: x.replace('\n', '').replace('\r', '').replace('\t', '').
+                                             replace(' ', ''), content)))
+                            except:
+                                deal_content = ''
                             if ''.join(date) > current_time:
                                 commetents_info = {
                                     'city': city,
@@ -213,6 +210,9 @@ class Engine:
                                     'get_time': datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
                                     'url': res_url
                                 }
+                                for eachkey in commetents_info.keys():
+                                    commetents_info[eachkey] = commetents_info[eachkey].replace('\n', '').replace('\r',
+                                                                                                                  '')
                                 # 存储数据
                                 # 字段顺序：city, food, food_id, type, title, nick, start, content, date, get_time, url
                                 save_info = '{0[city]}\u0001{0[food]}\u0001{0[food_id]}\u0001' \
@@ -223,9 +223,6 @@ class Engine:
                                 self.pipe.pipe_txt_save(save_info, filename=setting.FILE_RESTAURANT_COMMENTS,
                                                         savetype='a')
                                 comments_time.add(''.join(date))
-                        # 超过评论最大页数则切换
-                        if params['page'] >= max_page:
-                            break
                         # 当前页面没有新增评论也切换至下一店铺
                         if not len(comments_time):
                             break
@@ -235,9 +232,9 @@ class Engine:
                 if comments_time:
                     check_dict[res_id] = max(comments_time)
                     # 抓取到的评论数据
+                self.pipe.pipe_pickle_save(check_dict, filename=setting.FILE_COMMENTS_CHECK)
             except:
                 continue
-        self.pipe.pipe_pickle_save(check_dict, filename=setting.FILE_COMMENTS_CHECK)
 
     def _temp_city_info(self, cityname):
         """
@@ -299,9 +296,9 @@ class Engine:
         :return: 代理ip
         """
         proxy_host = "proxy.abuyun.com"
-        proxy_port = "****"
-        proxy_user = "****"
-        proxy_pass = "****"
+        proxy_port = "9010"
+        proxy_user = "HY3JE71Z6CDS782P"
+        proxy_pass = "CE68530DAD880F3B"
         proxy_meta = "http://%(user)s:%(pass)s@%(host)s:%(port)s" % {"host": proxy_host,
                                                                      "port": proxy_port,
                                                                      "user": proxy_user,
@@ -312,11 +309,12 @@ class Engine:
         return proxies
 
     def start_engine(self):
-        self._engine_city_link()
-        self._engine_restaurant_link()
+        # self._engine_city_link()
+        # self._engine_restaurant_link()
         # 店铺信息和店铺评论可以同时抓取的，用多进程实现，后期可根据需求添加该功能，目前未开发循环抓取功能
-        self._engine_restaurant_info()
-        self._engine_restaurant_comments()
+        # self._engine_restaurant_info()
+        while True:
+            self._engine_restaurant_comments()
 
 
 if __name__ == '__main__':
