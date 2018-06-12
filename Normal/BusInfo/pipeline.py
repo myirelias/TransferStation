@@ -131,8 +131,5 @@ class Pipeline(object):
         将硬盘中持久化的数据加载到内存
         :return:
         """
-        try:
-            with open(self.path.format(kw.get('filename', 'default.txt')), 'rb') as f:
-                return pickle.load(f)
-        except:
-            return
+        with open(self.path.format(kw.get('filename', 'default.txt')), 'rb') as f:
+            return pickle.load(f)

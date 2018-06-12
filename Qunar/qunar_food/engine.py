@@ -10,6 +10,18 @@ import time
 import re
 import json
 import datetime
+import shutil
+try:
+    from hdfs3 import HDFileSystem
+except:
+    pass
+global HDFS
+try:
+    HDFS = HDFileSystem(host='192.168.100.178', port=8020)
+except:
+    pass
+
+import os
 
 
 class Engine:
@@ -35,51 +47,54 @@ class Engine:
     def _engine_restaurant_link(self):
         """
         获取每个城市中所有的美食店铺的链接
+        抓取之前获取当前已抓取的美食店铺id，当前抓取的id或进行校验是否为新增
+        新增数据则存入到对应的TEMP文件中，最后本次循化完毕后，统一推送新增数据到HDFS
+        本次循化所有模块执行完毕后，新增数据要追加入历史数据中，追加成功后修改新增数据文件名称，以便后面的新增文件不与前一次数据冲突
+        修改新政文件名称时候使用完成抓取当日的日期作为文件名称前缀
         :return:
         """
         city_list = self.pipe.pipe_txt_load(filename=setting.FILE_CITY_LIST)
+        # 获取已经抓取店铺id，便于识别新增数据
+        history_restautrant = self.pipe.pipe_txt_load(filename=setting.FILE_RESTAURANT_LIST)
+        history_id = set(map(lambda x: x.strip().split('\u0001')[2], [each for each in history_restautrant]))
         for each_city in city_list:
-            try:
-                url = each_city.strip().split('\u0001')[1] + '-meishi'
-                name = each_city.strip().split('\u0001')[0]
-                params_city = {'page': 0}
-                maxpage = 200  # 默认最大页数
-                while True:
-                    save_list = []
-                    params_city['page'] += 1
-                    content = self.crawl.crawl_by_get(url, headers=setting.HEADERS, params=params_city,
-                                                      proxies=self._engine_use_proxy(), retry=5)
-                    if not content:
-                        break
-                    # 获取总页数
-                    if params_city['page'] == 1:
-                        # 找到最大页数,使用map函数
-                        pagecount = map(lambda x: int(x) if x != '下一页' else -1,
-                                        self.analysis.analysis_by_xpath(content, xpahter=setting.XPATH_NEXTPAGE))
-                        if not pagecount:
-                            break
-                        maxpage = max(pagecount)
-
-                    element_li = self.analysis.analysis_by_xpath(content, xpahter=setting.XPATH_LI)
-                    if not element_li:
-                        break
-                    for each_ele in element_li:
-                        restaurant_name = self.analysis.analysis_by_xpath(each_ele, xpahter=setting.XPATH_RES_NAME)
-                        restaurant_type = self.analysis.analysis_by_xpath(each_ele, xpahter=setting.XPATH_RES_TYPE)
-                        restaurant_url = self.analysis.analysis_by_xpath(each_ele, xpahter=setting.XPATH_RES_URL)
-                        try:
-                            save_info = '{}\u0001{}\u0001{}\u0001{}'.format(name, ''.join(restaurant_name),
-                                                                            ''.join(restaurant_type),
-                                                                            ''.join(restaurant_url))
-                        except:
-                            continue
-                        save_list.append(save_info)
-                    self.pipe.pipe_txt_save(save_list, filename=setting.FILE_RESTAURANT_LIST, savetype='a')
-                    if params_city['page'] >= maxpage:
-                        break
-                    time.sleep(0.1)
-            except:
-                continue
+            # try:
+            url = each_city.strip().split('\u0001')[1] + '-meishi'
+            name = each_city.strip().split('\u0001')[0]
+            params_city = {'page': 0}
+            maxpage = 200  # 默认最大页数
+            while True:
+                save_list = []
+                params_city['page'] += 1
+                content = self.crawl.crawl_by_get(url, headers=setting.HEADERS, params=params_city,
+                                                  proxies=self._engine_use_proxy(), retry=5)
+                if not content:
+                    break
+                element_li = self.analysis.analysis_by_xpath(content, xpahter=setting.XPATH_LI)
+                if not element_li:
+                    break
+                for each_ele in element_li:
+                    restaurant_name = self.analysis.analysis_by_xpath(each_ele, xpahter=setting.XPATH_RES_NAME)
+                    restaurant_type = self.analysis.analysis_by_xpath(each_ele, xpahter=setting.XPATH_RES_TYPE)
+                    restaurant_url = self.analysis.analysis_by_xpath(each_ele, xpahter=setting.XPATH_RES_URL)
+                    current_id = re.search(re.compile(r'p-oi(\d+)-'), ''.join(restaurant_url)).group(1)
+                    if current_id in history_id:
+                        continue
+                    try:
+                        save_info = '{}\u0001{}\u0001{}\u0001{}\u0001{}'.format(name, ''.join(restaurant_name),
+                                                                                current_id,
+                                                                                ''.join(restaurant_type),
+                                                                                ''.join(restaurant_url))
+                    except:
+                        continue
+                    save_list.append(save_info)
+                if save_list:
+                    self.pipe.pipe_txt_save(save_list, filename=setting.TEMP_RESTAURANT_LIST, savetype='a')
+                if params_city['page'] >= maxpage:
+                    break
+                time.sleep(0.1)
+            # except:
+            #     continue
 
     def _engine_restaurant_info(self):
         """
@@ -87,19 +102,21 @@ class Engine:
         :return:
         """
         res_list = self.pipe.pipe_txt_load(filename=setting.FILE_RESTAURANT_LIST)
+        temp_list = self.pipe.pipe_txt_load(filename=setting.TEMP_RESTAURANT_LIST)
+        res_list.extend(temp_list)
+        history_restautrant = self.pipe.pipe_txt_load(filename=setting.FILE_RESTAURANT_INFO)
+        history_id = set(map(lambda x: x.strip().split('\u0001')[2], [each for each in history_restautrant]))
         for each_res in res_list:
             try:
                 # 店铺数据
                 res_info = each_res.strip().split('\u0001')
                 city_name = res_info[0]
                 res_name = res_info[1]
-                res_type = res_info[2]
-                res_url = res_info[3]
-                find_id = re.search(re.compile(r'p-oi(\d+)-'), res_url)
-                if find_id:
-                    res_id = find_id.group(1)
-                else:
-                    res_id = 0
+                res_id = res_info[2]
+                if res_id in history_id:
+                    continue
+                res_type = res_info[3]
+                res_url = res_info[4]
                 # 获取店铺详细信息
                 content = self.crawl.crawl_by_get(res_url, headers=setting.HEADERS, proxies=self._engine_use_proxy(),
                                                   retry=5, timeout=10)
@@ -120,7 +137,7 @@ class Engine:
                            '{0[describe]}\u0001{0[address]}\u0001{0[tel]}\u0001{0[open_time]}\u0001' \
                            '{0[dish]}\u0001{0[arrive]}\u0001{0[intro]}\u0001{0[restaurant_url]}\u0001' \
                            '{0[get_time]}'.format(detail)
-                self.pipe.pipe_txt_save(savedata, filename=setting.FILE_RESTAURANT_INFO, savetype='a')
+                self.pipe.pipe_txt_save(savedata, filename=setting.TEMP_RESTAURANT_INFO, savetype='a')
                 # self.pipe.pipe_mongo_save(detail, dbname='db_qunaer', colname='col_food_info')
                 time.sleep(0.02)
             except Exception as e:
@@ -128,11 +145,14 @@ class Engine:
                 continue
 
     def _engine_restaurant_comments(self):
+
         """
         获取所有餐厅评论数据
         :return:
         """
         res_list = self.pipe.pipe_txt_load(filename=setting.FILE_RESTAURANT_LIST)
+        temp_list = self.pipe.pipe_txt_load(filename=setting.TEMP_RESTAURANT_LIST)
+        res_list.extend(temp_list)
         # 每个店铺最新评论时间表
         check_dict = self.pipe.pipe_pickle_load(filename=setting.FILE_COMMENTS_CHECK)
         if not check_dict:
@@ -142,13 +162,9 @@ class Engine:
                 # 店铺数据
                 city = each_res.strip().split('\u0001')[0]
                 food = each_res.strip().split('\u0001')[1]
-                type = each_res.strip().split('\u0001')[2]
-                res_url = each_res.strip().split('\u0001')[3]
-                find_id = re.search(re.compile(r'p-oi(\d+)-'), res_url)
-                if find_id:
-                    res_id = find_id.group(1)
-                else:
-                    continue
+                res_id = each_res.strip().split('\u0001')[2]
+                type = each_res.strip().split('\u0001')[3]
+                res_url = each_res.strip().split('\u0001')[4]
                 api = setting.COMMENTS_API.format(res_id)
                 setting.HEADERS_COMMENTS['Referer'] = res_url
                 params = {
@@ -160,7 +176,6 @@ class Engine:
                 }
                 comments_time = set([])
                 current_time = check_dict.get(res_id, '0')
-                max_page = 1
                 while True:
                     time.sleep(0.2)
                     try:
@@ -220,7 +235,7 @@ class Engine:
                                             '{0[start]}\u0001{0[content]}\u0001{0[date]}\u0001' \
                                             '{0[get_time]}\u0001{0[url]}'.format(commetents_info)
 
-                                self.pipe.pipe_txt_save(save_info, filename=setting.FILE_RESTAURANT_COMMENTS,
+                                self.pipe.pipe_txt_save(save_info, filename=setting.TEMP_RESTAURANT_COMMENTS,
                                                         savetype='a')
                                 comments_time.add(''.join(date))
                         # 当前页面没有新增评论也切换至下一店铺
@@ -233,7 +248,8 @@ class Engine:
                     check_dict[res_id] = max(comments_time)
                     # 抓取到的评论数据
                 self.pipe.pipe_pickle_save(check_dict, filename=setting.FILE_COMMENTS_CHECK)
-            except:
+            except Exception as e:
+                print(e)
                 continue
 
     def _temp_city_info(self, cityname):
@@ -308,13 +324,42 @@ class Engine:
 
         return proxies
 
+    # 集群操作
+    @staticmethod
+    def _engine_push_hdfs(filename):
+        try:
+            if os.path.exists('DATA/' + filename):
+                # HDFS.put(当前文件，目标文件)
+                HDFS.put('DATA/' + filename,
+                         '/user/spider/everyday/{}'.format(filename))
+
+        except Exception as e:
+            print('集群挂了', e)
+
     def start_engine(self):
         # self._engine_city_link()
-        # self._engine_restaurant_link()
-        # 店铺信息和店铺评论可以同时抓取的，用多进程实现，后期可根据需求添加该功能，目前未开发循环抓取功能
-        # self._engine_restaurant_info()
         while True:
-            self._engine_restaurant_comments()
+            # self._engine_restaurant_link()
+            # self._engine_restaurant_info()
+            # self._engine_restaurant_comments()
+            current_time = datetime.datetime.now().strftime('%Y-%m-%d')
+            file_dict = {
+                setting.FILE_RESTAURANT_LIST: setting.TEMP_RESTAURANT_LIST,
+                setting.FILE_RESTAURANT_INFO: setting.TEMP_RESTAURANT_INFO,
+                setting.FILE_RESTAURANT_COMMENTS: setting.TEMP_RESTAURANT_COMMENTS
+            }
+            for f, t in file_dict.items():
+                if os.path.exists('DATA/{}'.format(f)):
+                    temp = self.pipe.pipe_txt_load(filename=t)
+                    newname = 'qunar{}({}).txt'.format(t[4:-4], current_time)
+                    if temp:
+                        self.pipe.pipe_txt_save(temp, filename=f, savetype='a')
+                        os.rename('DATA/{}'.format(t), 'DATA/{}'.format(newname))
+                else:
+                    os.rename('DATA/{}'.format(t), 'DATA/{}'.format(f))
+                    newname = 'qunar{}({}).txt'.format(t[4:-4], current_time)
+                    shutil.copy('DATA/{}'.format(f), 'DATA/{}'.format(newname))
+                self._engine_push_hdfs(newname)
 
 
 if __name__ == '__main__':

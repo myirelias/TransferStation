@@ -68,8 +68,11 @@ XPATH_COMMENTS_START = ".//*[starts-with(@class,'cur_star')]/@class"
 XPATH_COMMENTS_DETAIL = ".//*[@class='comment_content']/descendant::text()"
 XPATH_COMMENTS_NICK = ".//*[@class='e_comment_usr_name']/descendant::text()"
 # file
-FILE_CITY_LIST = 'file_city_list.txt'
-FILE_RESTAURANT_LIST = 'file_restaurant_list.txt'
-FILE_RESTAURANT_INFO = 'file_restaurant_info.txt'
-FILE_RESTAURANT_COMMENTS = 'file_restaurant_comments.txt'
-FILE_COMMENTS_CHECK = 'file_comments_check.txt'
+FILE_CITY_LIST = 'qunar_city_list.txt'
+FILE_RESTAURANT_LIST = 'qunar_restaurant_list.txt'
+FILE_RESTAURANT_INFO = 'qunar_restaurant_info.txt'
+FILE_RESTAURANT_COMMENTS = 'qunar_restaurant_review.txt'
+FILE_COMMENTS_CHECK = 'qunar_comments_check.txt'
+TEMP_RESTAURANT_LIST = 'temp_restaurant_list.txt'
+TEMP_RESTAURANT_INFO = 'temp_restaurant_info.txt'
+TEMP_RESTAURANT_COMMENTS = 'temp_restaurant_review.txt'
