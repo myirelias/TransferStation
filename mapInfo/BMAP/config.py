@@ -4,6 +4,16 @@ HOST = '192.168.2.54'
 # key
 KEY = '****'
 
+
+# 检索关键字及tag标签
+QUERY_DICT = {
+    '住宅': {'query': ['住宅', '小区'], 'tag': ['房地产']},
+    '学校': {'query': ['幼儿园', '小学', '中学', '初中', '高中', '大学', '学院'], 'tag': ['教育培训']},
+    '工厂': {'query': ['工业厂房', '工厂', '厂房', '厂区'], 'tag': ['公司企业']},
+    '道路': {'query': ['道路'], 'tag': ['道路', '出入口']},
+    '公园': {'query': ['公园'], 'tag': ['旅游景点']}
+}
+
 # 起始url
 SEARCH_API = 'http://api.map.baidu.com/place/v2/search'
 TOURIS_URL = ''
@@ -30,9 +40,6 @@ PARAMS = {
     'page_num': '0',  # 分页页码， 默认为0，代表第1页，依次类推
     'ak': '',  # key
 }
-
-
-
 
 # xpath
 XPATH_POIS = ".//*/pois[@type='list']/poi"
@@ -76,3 +83,5 @@ XPATH_PHOTO_DETAIL = {
 # file
 FILE_TYPE_NAME = 'bmap_type_name.txt'
 FILE_CITY_ID = 'bmap_city_id.txt'
+FILE_HISTORY_ID = 'bmap_history_id.txt'
+FILE_LOG_INFO = 'log.txt'
