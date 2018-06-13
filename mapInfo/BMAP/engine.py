@@ -21,7 +21,7 @@ class Engine:
     def _engine_search_by_city(self):
         """指定城市检索关键字数据"""
         city_id = self.pipe.pipe_txt_load(filename=setting.FILE_CITY_ID)
-        history_id = self.pipe.pipe_txt_load(filename=setting.FILE_HISTORY_ID)
+        history_id = list(map(lambda x: x.strip(), self.pipe.pipe_txt_load(filename=setting.FILE_HISTORY_ID)))
         current_params = deepcopy(setting.PARAMS)
         current_params['ak'] = setting.KEY
         for k, v in setting.QUERY_DICT.items():
@@ -89,7 +89,7 @@ class Engine:
         city_name = list(map(lambda x: x.strip().split('\u0001')[1],
                              self.pipe.pipe_txt_load(filename=setting.FILE_CITY_ID)))
         location_list = self._engine_all_location()
-        history_id = self.pipe.pipe_txt_load(filename=setting.FILE_HISTORY_ID)
+        history_id = list(map(lambda x: x.strip(), self.pipe.pipe_txt_load(filename=setting.FILE_HISTORY_ID)))
         current_params = deepcopy(setting.PARAMS)
         current_params['ak'] = setting.KEY
         for k, v in setting.QUERY_DICT.items():
