@@ -155,15 +155,14 @@ class Engine:
         获取所有坐标点
         :return:
         """
-        type_list = self.pipe.pipe_txt_load(filename=setting.FILE_TYPE_NAME)
         all_location = []
-        for each_type in type_list:
-            filename = 'baidu_{}.txt'.format(each_type.strip())
+        for k, v in setting.QUERY_DICT.items():
+            filename = 'baidu_{}.txt'.format(k)
             area_list = self.pipe.pipe_txt_load(filename=filename)
             if not area_list:
                 continue
             all_location.extend(list(map(lambda x: x.strip().split('\u0001')[7], area_list)))
-        return all_location
+        return set(all_location)
 
     @staticmethod
     def _engine_use_proxy():
@@ -186,7 +185,7 @@ class Engine:
 
     def run_engine(self):
         while True:
-            # self._engine_search_by_city()
+            self._engine_search_by_city()
             self._engine_search_by_location()
             nowtime = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
             save_log = []
