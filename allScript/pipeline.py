@@ -1,10 +1,13 @@
 # coding=utf-8
 '''存储模块'''
 
-import pickle
 import os
-from pymongo import MongoClient
-import config as setting
+import pickle
+
+try:
+    from pymongo import MongoClient
+except:
+    pass
 
 
 class Pipeline(object):
@@ -19,7 +22,7 @@ class Pipeline(object):
     """
 
     def __init__(self):
-        self.conn = MongoClient(setting.HOST, 27017)
+        # self.conn = MongoClient(setting.HOST, 27017)
         self.path = os.path.join(os.path.abspath('DATA'), '{}')
         self._pipe_create_data()
 
@@ -101,6 +104,8 @@ class Pipeline(object):
             if isinstance(data, list) or isinstance(data, set):
                 for each in data:
                     f.write(each + '\n')
+            elif data == '':
+                pass
             elif isinstance(data, str):
                 f.write(data + '\n')
 
@@ -131,5 +136,9 @@ class Pipeline(object):
         将硬盘中持久化的数据加载到内存
         :return:
         """
-        with open(self.path.format(kw.get('filename', 'default.txt')), 'rb') as f:
-            return pickle.load(f)
+        try:
+            with open(self.path.format(kw.get('filename', 'default.txt')), 'rb') as f:
+                return pickle.load(f)
+        except:
+            return
+

@@ -31,7 +31,8 @@ class Analysis(object):
             if isinstance(xpahter, dict):
                 res = {}
                 for eachkey in xpahter.keys():
-                    res[eachkey] = ''.join(seletor.xpath(xpahter[eachkey])).replace('\n', '')
+                    res[eachkey] = ''.join(seletor.xpath(xpahter[eachkey])).replace('\n', '').replace('\r', '')\
+                        .replace('\t', '').replace(' ', '')
             elif isinstance(xpahter, str):
                 res = seletor.xpath(xpahter)
             else:
