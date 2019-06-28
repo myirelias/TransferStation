@@ -43,7 +43,7 @@ PARAMS_COMMENTS = {
 
 }
 # xpath
-XPATH_CITY_A = ".//*/div[starts-with(@class,'list')][1]/div[starts-with(@class,'contbox')]/descendant::a"
+XPATH_CITY_A = ".//*/div[starts-with(@class,'list')][1]/div[starts-with(@class,'contbox current')]/descendant::a"
 XPATH_CITY_NAME = ".//text()"
 XPATH_CITY_URL = './/@href'
 XPATH_LI = ".//*[@class='listbox']/descendant::li"

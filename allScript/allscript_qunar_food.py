@@ -15,27 +15,26 @@ from crawl import Crawl
 from analysis import Analysis
 from pipeline import Pipeline
 from configbag import config as setting
-
-
 try:
     from hdfs3 import HDFileSystem
-except:
-    pass
-global HDFS
-try:
-    HDFS = HDFileSystem(host='192.168.100.178', port=8020)
 except:
     pass
 from dolog import AliyunLog
 import queue
 
+endpoint = 'cn-shenzhen.log.aliyuncs.com'  # 日志服务的http地址，必选参数
+accessKeyId = 'F8TzTgiG8arBQSsb'  # 用户身份标识，必选参数
+accessKey = 'pPNGvSuULYJChpvlfdwOWOhTFX4xSN'
+project = 'daqsoft-test'  # 日志服务的项目名，必选参数
+logstore = 'team_test'  # 日志服务的日志库名，必选参数
+
 
 class Engine:
+
     def __init__(self):
         self.crawl = Crawl()
         self.analysis = Analysis()
         self.pipe = Pipeline()
-        self.alilog = AliyunLog('{}_{}'.format(setting.OTA_NAME, setting.CATEGORY_NAME))
         self._use_log()
         try:
             self.args_dict = eval(sys.argv[1:])
@@ -44,13 +43,31 @@ class Engine:
         except Exception as e:
             self.args_dict = {}
             logging.warning('get args failed:{}'.format(e))
+        self.proxies = self.args_dict.get('proxies')  # 代理配置
+        self.hdfs = self.args_dict.get('hdfs', {})  # hdfs配置
+        # 如果没有这两个参数 直接报异常 不执行
+        if not self.hdfs or not self.proxies:
+            raise ValueError('args not have hdfs or proxies')
+        self.sleep_time = self.args_dict.get('sleep_time', 0.2)  # 休眠时间
+        self.service_args = self.args_dict.get('service_args', {})  # PhantomJS代理配置
+        self.aliyun_log = self.args_dict.get('aliyun_log', {})
+        self.alilog = AliyunLog('{}_{}'.format(setting.OTA_NAME, setting.CATEGORY_NAME),
+                                endp=self.aliyun_log.get('endpoint', endpoint),
+                                accid=self.aliyun_log.get('accessKeyId', accessKeyId),
+                                acckey=self.aliyun_log.get('accessKey', accessKey),
+                                proj=self.aliyun_log.get('project', project),
+                                logst=self.aliyun_log.get('logstore', logstore))  # 阿里云log配置文件,需要校验如果没有该参数会不会报错
+        try:
+            self.HDFS = HDFileSystem(host=self.hdfs.get('ip', '192.168.100.178'), port=self.hdfs.get('port', 8020))
+        except:
+            pass
 
     def _engine_city_link(self):
         """
         获取所有城市的名称和url链接，结果输出到file_city_list.txt文本中
         :return:
         """
-        content = self.crawl.crawl_by_get(setting.START_URL, headers=setting.HEADERS, proxies=self._engine_use_proxy())
+        content = self.crawl.crawl_by_get(setting.START_URL, headers=setting.HEADERS, proxies=self.proxies)
         element_city = self.analysis.analysis_by_xpath(content, setting.XPATH_CITY_A)
         city_list = []
         for each_element in element_city:
@@ -82,7 +99,7 @@ class Engine:
                 save_list = []
                 params_city['page'] += 1
                 content = self.crawl.crawl_by_get(url, headers=setting.HEADERS, params=params_city,
-                                                  proxies=self._engine_use_proxy(), retry=5)
+                                                  proxies=self.proxies, retry=5)
                 if not content:
                     break
                 element_li = self.analysis.analysis_by_xpath(content, xpahter=setting.XPATH_LI)
@@ -112,7 +129,7 @@ class Engine:
                     self.pipe.pipe_txt_save(save_list, filename=setting.TEMP_RESTAURANT_LIST, savetype='a')
                 if params_city['page'] >= maxpage:
                     break
-                time.sleep(0.1)
+                time.sleep(self.sleep_time)
                 # except:
                 #     continue
 
@@ -140,7 +157,7 @@ class Engine:
                 res_type = res_info[3]
                 res_url = res_info[4]
                 # 获取店铺详细信息
-                content = self.crawl.crawl_by_get(res_url, headers=setting.HEADERS, proxies=self._engine_use_proxy(),
+                content = self.crawl.crawl_by_get(res_url, headers=setting.HEADERS, proxies=self.proxies,
                                                   retry=5, timeout=10)
                 detail = self.analysis.analysis_by_xpath(content, xpahter=setting.XPATH_RES_DETAIL)
                 detail['city_name'] = city_name
@@ -160,7 +177,7 @@ class Engine:
                            '{0[dish]}\u0001{0[arrive]}\u0001{0[intro]}\u0001{0[restaurant_url]}\u0001' \
                            '{0[get_time]}'.format(detail)
                 self.pipe.pipe_txt_save(savedata, filename=setting.TEMP_RESTAURANT_INFO, savetype='a')
-                time.sleep(0.2)
+                time.sleep(self.sleep_time)
             except Exception as e:
                 self.alilog.warning('[detail] {}'.format(e))
                 continue
@@ -198,11 +215,11 @@ class Engine:
                 comments_time = set([])
                 current_time = check_dict.get(res_id, '0')
                 while True:
-                    time.sleep(0.2)
+                    time.sleep(self.sleep_time)
                     try:
                         params['page'] += 1
                         content = self.crawl.crawl_by_get(api, headers=setting.HEADERS_COMMENTS,
-                                                          proxies=self._engine_use_proxy(),
+                                                          proxies=self.proxies,
                                                           params=params, retry=3, timeout=20)
                         content_dict = json.loads(content)
                         if not content_dict.get('data'):
@@ -219,7 +236,7 @@ class Engine:
                             more = self.analysis.analysis_by_xpath(each_element, xpahter=setting.XPATH_COMMENTS_MORE)
                             if more:
                                 content_more = self.crawl.crawl_by_get(more[0], headers=setting.HEADERS,
-                                                                       proxies=self._engine_use_proxy())
+                                                                       proxies=self.proxies)
                                 content = self.analysis.analysis_by_xpath(content_more,
                                                                           xpahter=setting.XPATH_COMMENTS_DETAIL)
                             else:
@@ -274,6 +291,100 @@ class Engine:
             except Exception as e:
                 self.alilog.warning('[review] {}'.format(e))
                 continue
+
+    def _engine_restaurant_link_by_args(self):
+        """
+        根据配置参数来进行抓取，从该模块提供参数的接口
+        :return:
+        """
+        # 传入的参数中是否有dist参数,此处暂时默认arg_dist为一个字符串参数，实际是一个列表
+        arg_dist = self.args_dict.get('dist', [])
+        # 如果没该参数，则全部抓取所有城市数据
+        if not arg_dist:
+            self._engine_restaurant_link()
+        else:
+            try:
+                city_dict = eval(self.pipe.pipe_txt_load(filename='./DATA/file_city_dict.txt'))
+            except Exception as e:
+                logging.warning('get city dict error: {}'.format(e))
+            # 假设此处获取到了待抓取的url
+            prov = arg_dist[0]  # 省
+            city = arg_dist[1]  # 市
+            area = arg_dist[2]  # 县
+
+            city_dict = {'四川省':
+                {
+                    '成都市': {'': 'http1'},
+                    '德阳市': {'': 'http2'},
+                    '眉山市': {'': 'http3'},
+                    '人寿市': {'': 'http4'},
+                }
+            }
+            if prov and city and area:
+                current_list = city_dict.get(prov, {}).get(city, {}).get(area, '')
+                city_list = [current_list]
+            elif prov and city and not area:
+                current_list = city_dict.get(prov, {}).get(city, {})
+                city_list = set([])
+                for name, url in current_list.items():
+                    city_list.add(url)
+            elif prov and not city and not area:
+                current_list = city_dict.get(prov, {})
+                city_list = set([])
+                for eachkey in current_list.keys():
+                    for url in current_list[eachkey].values():
+                        city_list.add(url)
+            else:
+                raise ValueError('args_dist error')
+
+            # 获取已经抓取店铺id，便于识别新增数据
+            history_restautrant = self.pipe.pipe_txt_load(filename=setting.FILE_RESTAURANT_LIST)
+            history_id = set(map(lambda x: x.strip().split('\u0001')[2], [each for each in history_restautrant]))
+            for each_city in set(city_list):
+                # try:
+                url = each_city.strip().split('\u0001')[1] + '-meishi'
+                name = each_city.strip().split('\u0001')[0]
+                params_city = {'page': 0}
+                maxpage = 200  # 默认最大页数
+                while True:
+                    save_list = []
+                    params_city['page'] += 1
+                    content = self.crawl.crawl_by_get(url, headers=setting.HEADERS, params=params_city,
+                                                      proxies=self.proxies, retry=5)
+                    if not content:
+                        break
+                    element_li = self.analysis.analysis_by_xpath(content, xpahter=setting.XPATH_LI)
+                    if not element_li:
+                        break
+                    for each_ele in element_li:
+                        restaurant_name = self.analysis.analysis_by_xpath(each_ele, xpahter=setting.XPATH_RES_NAME)
+                        restaurant_type = self.analysis.analysis_by_xpath(each_ele, xpahter=setting.XPATH_RES_TYPE)
+                        restaurant_url = self.analysis.analysis_by_xpath(each_ele, xpahter=setting.XPATH_RES_URL)
+                        current_id = re.search(re.compile(r'p-oi(\d+)-'), ''.join(restaurant_url)).group(1)
+                        if current_id in history_id:
+                            continue
+                        else:
+                            history_id.add(current_id)
+                        try:
+                            # 存储字段
+                            # name, restaurant_name, current_id, restaurant_type，, restaurant_url
+                            save_info = '{}\u0001{}\u0001{}\u0001{}\u0001{}'.format(name, ''.join(restaurant_name),
+                                                                                    current_id,
+                                                                                    ''.join(restaurant_type),
+                                                                                    ''.join(restaurant_url))
+                        except Exception as e:
+                            self.alilog.warning('[list] {}'.format(e))
+                            continue
+                        save_list.append(save_info)
+                    if save_list:
+                        self.pipe.pipe_txt_save(save_list, filename=setting.TEMP_RESTAURANT_LIST, savetype='a')
+                    if params_city['page'] >= maxpage:
+                        break
+                    time.sleep(self.sleep_time)
+                    # except:
+                    #     continue
+
+
 
     def _temp_city_info(self, cityname):
         """
@@ -348,19 +459,18 @@ class Engine:
         return proxies
 
     # 集群操作
-    @staticmethod
-    def _engine_push_hdfs(filename):
+    def _engine_push_hdfs(self, filename):
         try:
             if os.path.exists('DATA/' + filename):
                 # HDFS.put(当前文件，目标文件)
-                HDFS.put('DATA/' + filename,
+                self.HDFS.put('DATA/' + filename,
                          '/user/spider/everyday/{}'.format(filename))
             # 推送备份数据
             for eachfile in [setting.FILE_RESTAURANT_LIST, setting.FILE_RESTAURANT_INFO,
                              setting.FILE_RESTAURANT_COMMENTS]:
                 if os.path.exists('DATA/' + eachfile):
                     # HDFS.put(当前文件，目标文件)
-                    HDFS.put('DATA/' + eachfile,
+                    self.HDFS.put('DATA/' + eachfile,
                              '/user/spider/xieyangjie/Qunar/{}'.format(eachfile))
         except Exception as e:
             print('集群挂了', e)
@@ -379,9 +489,10 @@ class Engine:
                             format=LOGFMT, datefmt=DATEFMT, level=logging.INFO)
 
     def start_engine(self):
-        self._engine_city_link()
+        self.alilog.debug('script {}_{} running'.format(setting.OTA_NAME, setting.CATEGORY_NAME))
+        self._engine_restaurant_link_by_args()
         return
-        self._engine_restaurant_link()
+        self._engine_restaurant_link_by_args()
         self._engine_restaurant_info()
         self._engine_restaurant_comments()
         logging.info('{}_{} spider running'.format(setting.OTA_NAME, setting.CATEGORY_NAME))

@@ -41,14 +41,17 @@ MESSAGE = 'message'
 
 
 class AliyunLog(object):
-    ''''''
-    client = LogClient(endpoint, accessKeyId, accessKey)
-    request_set_data = PutLogsRequest(project, logstore)
+    '''
+    阿里云日志
+    '''
+
     default_time_format = '%Y-%m-%d %H:%M:%S'
 
-    def __init__(self, ota_category):
+    def __init__(self, ota_category, endp=endpoint, accid=accessKeyId, acckey=accessKey, proj=project, logst=logstore):
         self.category = ota_category.split('_')[1]
         self.project = ota_category
+        self.client = LogClient(endp, accid, acckey)
+        self.request_set_data = PutLogsRequest(proj, logst)
 
     def debug(self, message, class_=''):
         '''调试'''
